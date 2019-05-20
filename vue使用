@@ -1,0 +1,9 @@
+安装node.js
+检查node版本：node-v
+安装vue-cli脚手架：npm install -g vue-cli
+vue
+vue list
+webpack开始一个项目：vue init webpack 项目名称
+进入项目：cd 项目名称
+运行：npm run dev
+在chrome中输入：http://localhost/8080

@@ -74,12 +74,193 @@ requireComponent.keys().forEach(fileName => {
     // 否则回退到使用模块的根。
     componentConfig.default || componentConfig
   )
-  2.prop
-  prop的大小写
-  prop的类型
-  传递静态或动态prop
-  单向数据流
-  prop验证
-  非prop的特性
-  
+    
 })
+  2.prop
+  prop的大小写：HTML 中的特性名是大小写不敏感的，使用 DOM 中的模板时，camelCase (驼峰命名法) 的 prop 名需要使用其等价的 kebab-case (短横线分隔命名) 命名
+  prop的类型：字符串数组形式，对象形式
+  props: {
+  title: String,
+  likes: Number,
+  isPublished: Boolean,
+  commentIds: Array,
+  author: Object,
+  callback: Function,
+  contactsPromise: Promise // or any other constructor
+}
+  传递静态或动态prop；v-bind 动态赋值
+  单向数据流：
+  单向下行绑定：父级 prop 的更新会向下流动到子组件中，但是反过来则不行。这样会防止从子组件意外改变父级组件的状态，从而导致你的应用的数据流向难以理解。
+  prop验证：
+  Vue.component('my-component', {
+  props: {
+    // 基础的类型检查 (`null` 和 `undefined` 会通过任何类型验证)
+    propA: Number,
+    // 多个可能的类型
+    propB: [String, Number],
+    // 必填的字符串
+    propC: {
+      type: String,
+      required: true
+    },
+    // 带有默认值的数字
+    propD: {
+      type: Number,
+      default: 100
+    },
+    // 带有默认值的对象
+    propE: {
+      type: Object,
+      // 对象或数组默认值必须从一个工厂函数获取
+      default: function () {
+        return { message: 'hello' }
+      }
+    },
+    // 自定义验证函数
+    propF: {
+      validator: function (value) {
+        // 这个值必须匹配下列字符串中的一个
+        return ['success', 'warning', 'danger'].indexOf(value) !== -1
+      }
+    }
+  }
+})
+  非prop的特性：
+  不希望组件的根元素继承特性，你可以在组件的选项中设置 inheritAttrs: false
+3.自定义事件
+事件名；不同于组件和 prop，事件名不存在任何自动化的大小写转换。而是触发的事件名需要完全匹配监听这个事件所用的名称。
+推荐你始终使用 kebab-case 的事件名
+自定义组件的v-model：model选项
+将原生事件绑定到组件：$listeners 属性，它是一个对象，里面包含了作用在这个组件上的所有监听器
+.sync修饰符：
+<text-document
+  v-bind:title="doc.title"
+  v-on:update:title="doc.title = $event"
+></text-document>
+
+<text-document v-bind:title.sync="doc.title"></text-document>
+4.插槽
+在 2.6.0 中，我们为具名插槽和作用域插槽引入了一个新的统一的语法 (即 v-slot 指令)。它取代了 slot 和 slot-scope 这两个目前已被废弃但未被移除且仍在文档中的特性。
+插槽内容：<slot> 元素作为承载分发内容的出口。
+编译作用域：该插槽跟模板的其它地方一样可以访问相同的实例属性 (也就是相同的“作用域”)，而不能访问 <navigation-link> 的作用域。例如 url 是访问不到的
+<navigation-link url="/profile">
+  Clicking here will send you to: {{ url }}
+  <!--
+  这里的 `url` 会是 undefined，因为 "/profile" 是
+  _传递给_ <navigation-link> 的而不是
+  在 <navigation-link> 组件*内部*定义的。
+  -->
+</navigation-link>
+
+父级模板里的所有内容都是在父级作用域中编译的；子模板里的所有内容都是在子作用域中编译的。
+
+
+后备内容：在没有提供内容的时候被渲染。
+<button type="submit">
+  <slot>Submit</slot>
+</button>
+具名插槽：<slot> 元素有一个特殊的特性：name。这个特性可以用来定义额外的插槽：
+向具名插槽提供内容的时候，我们可以在一个 <template> 元素上使用 v-slot 指令，并以 v-slot 的参数的形式提供其名称，现在 <template> 元素中的所有内容都将会被传入相应的插槽。任何没有被包裹在带有 v-slot 的 <template> 中的内容都会被视为默认插槽的内容
+v-slot 只能添加在一个 <template> 上 (只有一种例外情况)，这一点和已经废弃的 slot 特性不同。
+作用域插槽：
+为了让 user 在父级的插槽内容可用，我们可以将 user 作为一个 <slot> 元素的特性绑定上去：
+<span>
+  <slot v-bind:user="user">
+    {{ user.lastName }}
+  </slot>
+</span>
+绑定在 <slot> 元素上的特性被称为插槽 prop。现在在父级作用域中，我们可以给 v-slot 带一个值来定义我们提供的插槽 prop 的名字：
+<current-user>
+  <template v-slot:default="slotProps">
+    {{ slotProps.user.firstName }}
+  </template>
+</current-user>
+独占默认插槽的缩写语法：只要出现多个插槽，请始终为所有的插槽使用完整的基于 <template> 的语法
+<current-user v-slot="slotProps">
+  {{ slotProps.user.firstName }}
+</current-user>
+解构插槽prop：
+<current-user v-slot="{ user = { firstName: 'Guest' } }">
+  {{ user.firstName }}
+</current-user>
+
+动态插槽名:动态指令参数也可以用在 v-slot 上，来定义动态的插槽名：
+<base-layout>
+  <template v-slot:[dynamicSlotName]>
+    ...
+  </template>
+</base-layout>
+具名插槽的缩写:把参数之前的所有内容 (v-slot:) 替换为字符 #。例如 v-slot:header 可以被重写为 #header
+<base-layout>
+  <template #header>
+    <h1>Here might be a page title</h1>
+  </template>
+
+  <p>A paragraph for the main content.</p>
+  <p>And another one.</p>
+
+  <template #footer>
+    <p>Here's some contact info</p>
+  </template>
+</base-layout>
+其他
+废弃的语法
+
+5.动态组件&异步组件
+在动态组件上使用keep-alive
+异步组件：工厂函数
+
+6.处理边界情况
+访问根实例：
+// Vue 根实例
+new Vue({
+  data: {
+    foo: 1
+  },
+  computed: {
+    bar: function () { /* ... */ }
+  },
+  methods: {
+    baz: function () { /* ... */ }
+  }
+})
+// 获取根组件的数据
+this.$root.foo
+
+// 写入根组件的数据
+this.$root.foo = 2
+
+// 访问根组件的计算属性
+this.$root.bar
+
+// 调用根组件的方法
+this.$root.baz()
+
+对于 demo 或非常小型的有少量组件的应用来说这是很方便的。不过这个模式扩展到中大型应用来说就不然了。因此在绝大多数情况下，我们强烈推荐使用 Vuex 来管理应用的状态。
+访问父级组件实例：$parent 属性可以用来从一个子组件访问父组件的实例
+访问子组件实例或子元素：通过 ref 特性为这个子组件赋予一个 ID 引用
+<base-input ref="usernameInput"></base-input>
+
+this.$refs.usernameInput
+依赖注入：
+provide 选项允许我们指定我们想要提供给后代组件的数据/方法
+provide: function () {
+  return {
+    getMap: this.getMap
+  }
+}
+在任何后代组件里，inject 选项来接收指定的我们想要添加在这个实例上的属性：
+inject: ['getMap']
+
+程序化的事件侦听器
+通过 $on(eventName, eventHandler) 侦听一个事件
+通过 $once(eventName, eventHandler) 一次性侦听一个事件
+通过 $off(eventName, eventHandler) 停止侦听一个事件
+
+递归组件；
+组件是可以在它们自己的模板中调用自身的。不过它们只能通过 name 选项来做这件事
+name: 'stack-overflow',
+template: '<div><stack-overflow></stack-overflow></div>'
+组件之间的循环引用：？
+末班定义的替代品
+控制更新
